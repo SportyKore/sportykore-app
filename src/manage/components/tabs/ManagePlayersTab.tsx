@@ -31,17 +31,13 @@ export function ManagePlayersTab({
   const [inviteOpen, setInviteOpen] = useState(false);
   return (
     <View className="gap-4 pb-8">
-      <Button
-        label="Invite players"
-        variant="secondary"
-        onPress={() => setInviteOpen(true)}
-      />
       <RosterWorkspace
         key={`${leagueId}:${seasonId}:${adminTeamId ?? "owner"}`}
         leagueId={leagueId}
         seasonId={seasonId}
         teams={teams}
         adminTeamId={adminTeamId}
+        onInvite={() => setInviteOpen(true)}
         renderDetails={
           adminTeamId == null
             ? (row) => (

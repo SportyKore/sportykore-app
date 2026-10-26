@@ -1,10 +1,10 @@
+import { Ionicons } from "@expo/vector-icons";
 import { type ReactNode, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Pressable,
   Share,
-  Switch,
   Text,
   View,
 } from "react-native";
@@ -19,11 +19,7 @@ import {
   isDuplicateNamesError,
   type CreateRosterPlayers,
 } from "../../roster-api";
-import {
-  useRosterActions,
-  useRosterSettings,
-  useUpdateRosterSettings,
-} from "../../roster-hooks";
+import { useRosterActions } from "../../roster-hooks";
 import type { LeagueRosterRow } from "../../types";
 import { hasDuplicateRosterNames, parseRosterNames } from "../../utils/roster";
 
@@ -32,24 +28,30 @@ type Props = {
   seasonId: number;
   teams: ApiTeam[];
   adminTeamId?: number;
+  onInvite: () => void;
   renderDetails?: (row: LeagueRosterRow) => ReactNode;
 };
-type Filter = "all" | "pool" | "pending" | number;
+type Filter = "all" | "pool" | "pending";
+const statusOptions: { id: number; name: string; value: Filter }[] = [
+  { id: 0, name: "All players", value: "all" },
+  { id: 1, name: "Pending", value: "pending" },
+  { id: 2, name: "Unassigned", value: "pool" },
+];
 
 export function RosterWorkspace({
   leagueId,
   seasonId,
   teams,
   adminTeamId,
+  onInvite,
   renderDetails,
 }: Props) {
   const theme = useTheme();
   const roster = useSeasonRoster(leagueId, seasonId);
   const { create, assign, review } = useRosterActions(leagueId, seasonId);
   const owner = adminTeamId == null;
-  const settings = useRosterSettings(leagueId, owner);
-  const updateSettings = useUpdateRosterSettings(leagueId);
-  const [filter, setFilter] = useState<Filter>(adminTeamId ?? "all");
+  const [teamFilter, setTeamFilter] = useState(adminTeamId ?? 0);
+  const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<number[]>([]);
   const [destination, setDestination] = useState<number | null>(
     adminTeamId ?? teams[0]?.id ?? null,
@@ -75,9 +77,8 @@ export function RosterWorkspace({
   const visible = rows.filter((row) => {
     if (!owner && row.team != null && row.team.id !== adminTeamId) return false;
     if (filter === "pool") return row.team == null;
-    if (filter === "pending") return row.status === "pending";
-    if (filter === "all") return true;
-    return row.team?.id === filter;
+    if (teamFilter !== 0 && row.team?.id !== teamFilter) return false;
+    return filter !== "pending" || row.status === "pending";
   });
   const selectedIds = selected.filter((id) =>
     pool.some((row) => row.id === id),
@@ -167,102 +168,65 @@ export function RosterWorkspace({
       >
         Season roster
       </Text>
-      <Button
-        label="Refresh roster"
-        variant="secondary"
-        loading={roster.isFetching}
-        onPress={() => void roster.refetch()}
-      />
-      <Text style={textStyle}>
-        Add a player by name, or paste one name per line. Profile details are
-        optional. Use the unassigned pool for existing players.
-      </Text>
+      <View className="flex-row items-center gap-3">
+        <View className="flex-1">
+          <Button
+            label="Invite players"
+            variant="secondary"
+            onPress={onInvite}
+          />
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Refresh roster"
+          accessibilityState={{
+            disabled: roster.isFetching,
+            busy: roster.isFetching,
+          }}
+          disabled={roster.isFetching}
+          onPress={() => void roster.refetch()}
+          className="h-14 w-14 items-center justify-center rounded-2xl border active:opacity-70"
+          style={{ borderColor: theme.cardBorder, backgroundColor: theme.card }}
+        >
+          {roster.isFetching ? (
+            <ActivityIndicator color={theme.brand} />
+          ) : (
+            <Ionicons name="refresh-outline" size={22} color={theme.text} />
+          )}
+        </Pressable>
+      </View>
       <Button
         label="Add / paste players"
         onPress={() => {
-          setAddTeamId(
-            adminTeamId ?? (typeof filter === "number" ? filter : null),
-          );
+          setAddTeamId(adminTeamId ?? (teamFilter || null));
           setAddOpen(true);
         }}
       />
-      {owner ? (
-        <View
-          className="gap-2 rounded-xl border p-4"
-          style={{ borderColor: theme.cardBorder, backgroundColor: theme.card }}
-        >
-          <Text style={{ ...textStyle, fontFamily: fonts.bodyBold }}>
-            Public registration approval
-          </Text>
-          <Text style={textStyle}>
-            Public registrations are pending by default. Turn approval off to
-            accept new registrations automatically.
-          </Text>
-          {settings.isPending ? (
-            <ActivityIndicator />
-          ) : settings.isError ? (
-            <>
-              <Text accessibilityRole="alert" style={textStyle}>
-                Could not load registration settings.
-              </Text>
-              <Button
-                label="Retry settings"
-                variant="secondary"
-                onPress={() => void settings.refetch()}
-              />
-            </>
-          ) : (
-            <View className="flex-row items-center justify-between gap-3">
-              <Text className="flex-1" style={textStyle}>
-                Require approval
-              </Text>
-              <Switch
-                accessibilityLabel="Require public registration approval"
-                value={settings.data.requiresApproval}
-                disabled={updateSettings.isPending}
-                onValueChange={(value) =>
-                  updateSettings.mutate(value, {
-                    onError: (error) => showThrownAsToast(error),
-                  })
-                }
-              />
-            </View>
-          )}
-        </View>
-      ) : null}
-      <View className="flex-row flex-wrap gap-2">
-        {[
-          ...(owner
-            ? [
-                { id: "all" as const, name: "All players" },
-                { id: "pending" as const, name: "Pending" },
-              ]
-            : []),
-          {
-            id: "pool" as const,
-            name: `Unassigned (${rows.filter((row) => row.team == null).length})`,
-          },
-          ...allowedTeams,
-        ].map((option) => (
-          <Pressable
-            key={option.id}
-            accessibilityRole="button"
-            accessibilityState={{ selected: filter === option.id }}
-            onPress={() => {
-              setFilter(option.id);
-              setSelected([]);
-            }}
-            className="min-h-12 justify-center rounded-xl border px-3"
-            style={{
-              borderColor:
-                filter === option.id ? theme.brand : theme.cardBorder,
-              backgroundColor:
-                filter === option.id ? theme.brandMuted : theme.card,
-            }}
-          >
-            <Text style={textStyle}>{option.name}</Text>
-          </Pressable>
-        ))}
+      <View className="gap-3">
+        <SeasonPicker
+          label="Team"
+          seasons={[{ id: 0, name: "All teams" }, ...allowedTeams]}
+          activeSeasonId={teamFilter}
+          onSelect={(id) => {
+            setTeamFilter(id);
+            if (id !== 0 && filter === "pool") setFilter("all");
+            setSelected([]);
+          }}
+        />
+        <SeasonPicker
+          label="Status"
+          seasons={statusOptions}
+          activeSeasonId={
+            statusOptions.find((option) => option.value === filter)?.id ?? 0
+          }
+          onSelect={(id) => {
+            const value =
+              statusOptions.find((option) => option.id === id)?.value ?? "all";
+            setFilter(value);
+            if (value === "pool") setTeamFilter(0);
+            setSelected([]);
+          }}
+        />
       </View>
       {roster.isPending ? (
         <ActivityIndicator accessibilityLabel="Loading roster" />
@@ -498,6 +462,8 @@ export function RosterWorkspace({
                 onPress={() => {
                   setAddOpen(false);
                   setFilter("pool");
+                  setTeamFilter(0);
+                  setSelected([]);
                   setPreview(null);
                 }}
               />

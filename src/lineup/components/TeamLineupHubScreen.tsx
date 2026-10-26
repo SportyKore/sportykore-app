@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,12 +8,15 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import type { ApiGame, GameStatus } from "@/api/entities";
 import { useAppearance } from "@/color/appearance-context";
 import { useTheme } from "@/color/use-theme";
-import { EntityLogo } from "@/components/ui";
+import { DetailTabs, EntityLogo } from "@/components/ui";
 import { BlackPatternBackground } from "@/components/ui/black-pattern-background";
 import { ErrorState } from "@/components/ui/error-state";
 import { colors } from "@/constants";
@@ -57,6 +60,7 @@ function opponentFor(game: ApiGame, teamId: number) {
 
 export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"lineups" | "players">("lineups");
   const teamQuery = useTeamDetail(teamId);
   const insets = useSafeAreaInsets();
   const theme = useTheme();
@@ -64,15 +68,15 @@ export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
   const { isTablet, isWideTablet } = useAdaptiveLayout();
   const tabletMaxWidth = isWideTablet ? 1120 : 920;
   const tabletFrameStyle = isTablet
-    ? { alignSelf: "center" as const, width: "100%" as const, maxWidth: tabletMaxWidth }
+    ? {
+        alignSelf: "center" as const,
+        width: "100%" as const,
+        maxWidth: tabletMaxWidth,
+      }
     : undefined;
   const leagueBlock = useMemo(() => {
     const leagues = teamQuery.data?.leagues ?? [];
-    return (
-      leagues.find((entry) => entry.id === leagueId) ??
-      leagues[0] ??
-      null
-    );
+    return leagues.find((entry) => entry.id === leagueId) ?? leagues[0] ?? null;
   }, [teamQuery.data, leagueId]);
 
   const seasonBlock = useMemo(() => {
@@ -81,9 +85,7 @@ export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
       return seasons.find((entry) => entry.id === seasonId) ?? null;
     }
     return (
-      seasons.find((entry) => entry.status === "active") ??
-      seasons[0] ??
-      null
+      seasons.find((entry) => entry.status === "active") ?? seasons[0] ?? null
     );
   }, [leagueBlock, seasonId]);
 
@@ -91,8 +93,7 @@ export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
   const teamGames = useMemo(() => {
     const games = seasonBlock?.games ?? [];
     return [...games].sort(
-      (a, b) =>
-        new Date(a.playedAt).getTime() - new Date(b.playedAt).getTime(),
+      (a, b) => new Date(a.playedAt).getTime() - new Date(b.playedAt).getTime(),
     );
   }, [seasonBlock]);
 
@@ -115,53 +116,58 @@ export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
 
         <View className="px-5 pb-2">
           <View style={tabletFrameStyle}>
-          <View className="flex-row items-center gap-3 pb-4 pt-2">
-            <Pressable
-              onPress={() => router.back()}
-              accessibilityLabel="Go back"
-              className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
-              style={{ backgroundColor: isDark ? theme.card : theme.brandMuted }}
-            >
-              <Ionicons name="chevron-back" size={22} color={theme.text} />
-            </Pressable>
-            <View className="flex-1">
-              <Text
-                className="text-xl"
-                style={{ color: theme.text }}
+            <View className="flex-row items-center gap-3 pb-4 pt-2">
+              <Pressable
+                onPress={() => router.back()}
+                accessibilityLabel="Go back"
+                className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
+                style={{
+                  backgroundColor: isDark ? theme.card : theme.brandMuted,
+                }}
               >
-                {teamInfo?.name ?? "Team"}
-              </Text>
-              {leagueName ? (
+                <Ionicons name="chevron-back" size={22} color={theme.text} />
+              </Pressable>
+              <View className="flex-1">
+                <Text className="text-xl" style={{ color: theme.text }}>
+                  {teamInfo?.name ?? "Team"}
+                </Text>
+                {leagueName ? (
+                  <Text className="text-sm" style={{ color: theme.textSubtle }}>
+                    {leagueName}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+
+            {teamInfo ? (
+              <View className="mb-3 flex-row items-center gap-3">
+                <EntityLogo
+                  logoUrl={teamInfo.logoUrl}
+                  variant="team"
+                  size="sm"
+                  tone={isDark ? "dark" : "light"}
+                />
                 <Text
-                  className="text-sm"
+                  className="flex-1 text-sm"
                   style={{ color: theme.textSubtle }}
                 >
-                  {leagueName}
+                  Manage your squad and set lineups for fixtures.
                 </Text>
-              ) : null}
-            </View>
-          </View>
-
-          {teamInfo ? (
-            <View className="mb-3 flex-row items-center gap-3">
-              <EntityLogo
-                logoUrl={teamInfo.logoUrl}
-                variant="team"
-                size="sm"
-                tone={isDark ? "dark" : "light"}
-              />
-              <Text
-                className="flex-1 text-sm"
-                style={{ color: theme.textSubtle }}
-              >
-                Manage your squad and set lineups for fixtures.
-              </Text>
-            </View>
-          ) : null}
+              </View>
+            ) : null}
+            <DetailTabs
+              tabs={[
+                { key: "lineups", label: "Lineups" },
+                { key: "players", label: "Players" },
+              ]}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
           </View>
         </View>
 
         <ScrollView
+          key={activeTab}
           className="flex-1 px-5"
           contentContainerClassName="gap-6 pb-12"
           contentContainerStyle={{
@@ -171,55 +177,57 @@ export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
           showsVerticalScrollIndicator={false}
         >
           <View className="w-full" style={tabletFrameStyle}>
-          {teamQuery.isLoading ? (
-            <View className="items-center py-16">
-              <ActivityIndicator color={colors.accent} />
-            </View>
-          ) : teamQuery.isError || !teamQuery.data ? (
-            <ErrorState
-              message={
-                teamQuery.isError
-                  ? messageForResourceLoad(teamQuery.error, "Team")
-                  : "Team not found."
-              }
-              onRetry={() => teamQuery.refetch()}
-            />
-          ) : !seasonBlock ? (
-            <View
-              className="rounded-[22px] border border-dashed px-5 py-8"
-              style={{
-                backgroundColor: theme.cardMuted,
-                borderColor: theme.cardBorder,
-              }}
-            >
-              <Text
-                className="text-base"
-                style={{ color: theme.text }}
-              >
-                No active season
-              </Text>
-              <Text
-                className="pt-2 text-sm leading-6"
-                style={{ color: theme.textSubtle }}
-              >
-                Ask the league admin to activate a season before setting
-                lineups.
-              </Text>
-            </View>
-          ) : (
-            <View className={isTablet ? "flex-row items-start gap-5" : "gap-6"}>
-              <View className="gap-3" style={isTablet ? { flex: 1.25 } : undefined}>
-                <FixturesList
-                  games={teamGames}
-                  teamId={teamId}
-                  onOpenLineup={openLineup}
-                />
+            {teamQuery.isLoading ? (
+              <View className="items-center py-16">
+                <ActivityIndicator color={colors.accent} />
               </View>
-              <View className="gap-3" style={isTablet ? { flex: 1 } : undefined}>
-                {teamInfo ? <ManagePlayersTab leagueId={leagueId} leagueName={leagueName ?? "League"} seasonId={resolvedSeasonId} teams={[teamInfo]} adminTeamId={teamId} /> : null}
+            ) : teamQuery.isError || !teamQuery.data ? (
+              <ErrorState
+                message={
+                  teamQuery.isError
+                    ? messageForResourceLoad(teamQuery.error, "Team")
+                    : "Team not found."
+                }
+                onRetry={() => teamQuery.refetch()}
+              />
+            ) : !seasonBlock ? (
+              <View
+                className="rounded-[22px] border border-dashed px-5 py-8"
+                style={{
+                  backgroundColor: theme.cardMuted,
+                  borderColor: theme.cardBorder,
+                }}
+              >
+                <Text className="text-base" style={{ color: theme.text }}>
+                  No active season
+                </Text>
+                <Text
+                  className="pt-2 text-sm leading-6"
+                  style={{ color: theme.textSubtle }}
+                >
+                  Ask the league admin to activate a season before setting
+                  lineups.
+                </Text>
               </View>
-            </View>
-          )}
+            ) : (
+              <View key={activeTab} className="gap-3">
+                {activeTab === "lineups" ? (
+                  <FixturesList
+                    games={teamGames}
+                    teamId={teamId}
+                    onOpenLineup={openLineup}
+                  />
+                ) : teamInfo ? (
+                  <ManagePlayersTab
+                    leagueId={leagueId}
+                    leagueName={leagueName ?? "League"}
+                    seasonId={resolvedSeasonId}
+                    teams={[teamInfo]}
+                    adminTeamId={teamId}
+                  />
+                ) : null}
+              </View>
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -293,7 +301,9 @@ function FixturesList({
                   "rounded-full px-2.5 py-1",
                   editable ? "bg-accent-400/20" : "",
                 ].join(" ")}
-                style={!editable ? { backgroundColor: theme.cardMuted } : undefined}
+                style={
+                  !editable ? { backgroundColor: theme.cardMuted } : undefined
+                }
               >
                 <Text
                   className="text-xs"

@@ -8,7 +8,7 @@ The Players tab provides name entry with a preview (one name per line), an unass
 
 Matching names trigger a confirmation before creating distinct player records. Names are deliberately not unique. The warning checks the accessible roster; the server additionally checks the current season roster for admin entry and the league's player records for public registration. Existing players in the unassigned pool should be assigned rather than recreated.
 
-Admin-created players are active immediately. Public submissions are pending by default. Owners can disable approval for future public registrations; changing the setting does not retroactively approve existing pending entries. Owners review registrations in the Players tab. Pending, rejected, and unassigned players cannot be selected for a team lineup.
+Admin-created players are active immediately. Public submissions are accepted automatically by default for existing and new leagues. The approval toggle is hidden for now; existing pending entries still need review. Owners review registrations in the Players tab. Pending, rejected, and unassigned players cannot be selected for a team lineup.
 
 ## Browser registration
 
@@ -43,3 +43,11 @@ All `/api/v1/roster` routes require a bearer token and enforce league/team scope
 4. Release the mobile app. Public registration links use `EXPO_PUBLIC_API_URL` (or the existing backend default), which must be reachable by recipients.
 
 No production migrations or deployment are performed by these source changes. Rollback of the roster foundation deliberately retains nullable fields and expanded statuses to avoid invalidating players already created without accounts.
+
+## Completion and web fallback
+
+Successful claims and accepted registration submissions (active or pending) attempt to close the browser tab after five seconds. Browsers may block closing tabs opened by the user or another app; the confirmation remains visible with a safe-to-close message and website link. Claim confirmations retain the app download link. Failed, rejected, and unavailable flows do not auto-close.
+
+Undefined HTML GET/HEAD pages, including `/` and `/test`, redirect to `https://sportykore.com`. API requests, missing assets, JSON requests, and errors from existing routes retain their normal error behavior.
+
+Release verification: backend/Inertia and mobile type checks, production backend build including static branding assets, 27 focused backend tests, and 33 mobile tests pass. Production PostgreSQL migration execution, live email delivery, and a native-device smoke test against the deployed backend remain release checks. Automated browser claim checks mock OTP/account endpoints; they do not prove email delivery.
