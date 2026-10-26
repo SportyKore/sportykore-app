@@ -148,3 +148,14 @@ export {
   isGameLivePeriod,
 } from "@/lib/game-time";
 export type { GameClockFields } from "@/lib/game-time";
+export {
+  assignRosterPlayers,
+  createPlayerClaim,
+  createRosterPlayers,
+  fetchRosterSettings,
+  isDuplicateNamesError,
+  reviewRosterPlayer,
+  updateRosterSettings,
+} from "./roster-api";
+export type { CreateRosterPlayers, RosterSettings } from "./roster-api";
+export { useRosterActions, useRosterSettings, useUpdateRosterSettings } from "./roster-hooks";

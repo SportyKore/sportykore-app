@@ -59,7 +59,7 @@ export function MatchCenterLineupTab({
   const activeTeamId = activeSide === "home" ? homeTeamId : awayTeamId;
 
   const teamRoster = useMemo(
-    () => roster.filter((row) => row.team.id === activeTeamId),
+    () => roster.filter((row) => row.team?.id === activeTeamId),
     [roster, activeTeamId],
   );
 

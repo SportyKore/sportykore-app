@@ -78,8 +78,8 @@ export async function generateInvite(
   const query = new URLSearchParams({
     leagueId: String(params.leagueId),
     seasonId: String(params.seasonId),
-    teamId: String(params.teamId),
   });
+  if (params.teamId != null) query.set("teamId", String(params.teamId));
   if (params.invitedUserId != null) {
     query.set("invitedUserId", String(params.invitedUserId));
   }

@@ -80,7 +80,7 @@ export function HybridScoringPanel({
   const players = useMemo(
     () =>
       roster.filter(
-        (row) => row.team.id === activeTeamId && row.status === "active",
+        (row) => row.team?.id === activeTeamId && row.status === "active",
       ),
     [roster, activeTeamId],
   );

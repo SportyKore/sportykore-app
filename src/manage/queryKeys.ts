@@ -1,4 +1,5 @@
 export const manageKeys = {
+  rosterSettings: (leagueId: number) => ["manage", "roster-settings", leagueId] as const,
   all: ["manage"] as const,
   managed: () => [...manageKeys.all, "managed"] as const,
   leagues: () => [...manageKeys.all, "leagues"] as const,

@@ -172,9 +172,10 @@ export async function removeTeamAdmin(
 export async function fetchSeasonRoster(
   leagueId: number,
   seasonId: number,
+  teamId?: number,
 ): Promise<LeagueRosterRow[]> {
   const res = await apiRequest<{ data: LeagueRosterRow[] }>(
-    `/api/v1/leagues/${leagueId}/seasons/${seasonId}/roster`,
+    `/api/v1/roster/${leagueId}/${seasonId}${teamId == null ? "" : `?teamId=${teamId}`}`,
     { auth: true },
   );
   return res.data;

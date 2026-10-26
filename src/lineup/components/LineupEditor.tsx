@@ -69,7 +69,7 @@ export function LineupEditor({
   const [hydrated, setHydrated] = useState(false);
 
   const teamRoster = useMemo(
-    () => roster.filter((row) => row.team.id === teamId),
+    () => roster.filter((row) => row.team?.id === teamId),
     [roster, teamId],
   );
 

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import type { ApiGame, ApiPlayerWithStats, GameStatus } from "@/api/entities";
+import type { ApiGame, GameStatus } from "@/api/entities";
 import { useAppearance } from "@/color/appearance-context";
 import { useTheme } from "@/color/use-theme";
 import { EntityLogo } from "@/components/ui";
@@ -20,6 +20,7 @@ import { colors } from "@/constants";
 import { useAdaptiveLayout } from "@/hooks/useAdaptiveLayout";
 import { formatPlayedAtShortDate, formatPlayedAtTime } from "@/lib/datetime";
 import { messageForResourceLoad } from "@/lib/show-error-toast";
+import { ManagePlayersTab } from "@/manage";
 import { useTeamDetail } from "@/team";
 
 type Props = {
@@ -52,11 +53,6 @@ function opponentFor(game: ApiGame, teamId: number) {
   if (game.homeTeam?.id === teamId) return game.awayTeam;
   if (game.awayTeam?.id === teamId) return game.homeTeam;
   return null;
-}
-
-function positionLabel(position: ApiPlayerWithStats["position"]): string {
-  if (!position) return "-";
-  return position.charAt(0).toUpperCase() + position.slice(1);
 }
 
 export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
@@ -100,7 +96,6 @@ export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
     );
   }, [seasonBlock]);
 
-  const roster = seasonBlock?.players ?? [];
   const teamInfo = teamQuery.data?.team ?? null;
   const leagueName = leagueBlock?.name;
 
@@ -159,7 +154,7 @@ export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
                 className="flex-1 text-sm"
                 style={{ color: theme.textSubtle }}
               >
-                Set lineups for fixtures. Roster is view-only.
+                Manage your squad and set lineups for fixtures.
               </Text>
             </View>
           ) : null}
@@ -221,7 +216,7 @@ export function TeamLineupHubScreen({ leagueId, teamId, seasonId }: Props) {
                 />
               </View>
               <View className="gap-3" style={isTablet ? { flex: 1 } : undefined}>
-                <SquadList roster={roster} isDark={isDark} />
+                {teamInfo ? <ManagePlayersTab leagueId={leagueId} leagueName={leagueName ?? "League"} seasonId={resolvedSeasonId} teams={[teamInfo]} adminTeamId={teamId} /> : null}
               </View>
             </View>
           )}
@@ -315,60 +310,6 @@ function FixturesList({
             </Pressable>
           );
         })
-      )}
-    </>
-  );
-}
-
-function SquadList({
-  roster,
-  isDark,
-}: {
-  roster: ApiPlayerWithStats[];
-  isDark: boolean;
-}) {
-  const theme = useTheme();
-
-  return (
-    <>
-      <Text
-        className="text-xs uppercase tracking-[2px]"
-        style={{ color: theme.textSubtle }}
-      >
-        Squad
-      </Text>
-      {roster.length === 0 ? (
-        <Text className="text-sm" style={{ color: theme.textSubtle }}>
-          No players on this team for the season yet.
-        </Text>
-      ) : (
-        roster.map((player) => (
-          <View
-            key={player.id}
-            className="flex-row items-center gap-3 rounded-[16px] px-4 py-3"
-            style={{ backgroundColor: theme.card }}
-          >
-            <EntityLogo
-              logoUrl={player.avatarUrl}
-              variant="player"
-              size="sm"
-              tone={isDark ? "brand" : "light"}
-              accessibilityLabel={player.name}
-            />
-            <View className="flex-1">
-              <Text
-                className="text-sm"
-                style={{ color: theme.text }}
-                numberOfLines={1}
-              >
-                {player.name}
-              </Text>
-              <Text className="text-xs" style={{ color: theme.textSubtle }}>
-                {positionLabel(player.position)}
-              </Text>
-            </View>
-          </View>
-        ))
       )}
     </>
   );

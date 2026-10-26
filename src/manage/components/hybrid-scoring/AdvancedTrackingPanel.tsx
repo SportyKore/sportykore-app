@@ -1023,7 +1023,7 @@ function collectRosterFallbackPlayers(
   if (!team) return [];
 
   return roster
-    .filter((row) => row.team.id === team.id && row.status === "active")
+    .filter((row) => row.team?.id === team.id && row.status === "active")
     .sort((a, b) => {
       const jerseyA = parseJersey(a.jerseyNumber);
       const jerseyB = parseJersey(b.jerseyNumber);
@@ -1031,11 +1031,11 @@ function collectRosterFallbackPlayers(
       return a.player.name.localeCompare(b.player.name);
     })
     .map((row) => ({
-      key: `${row.team.id}:${row.player.id}`,
+      key: `${row.team?.id}:${row.player.id}`,
       playerId: row.player.id,
-      teamId: row.team.id,
+      teamId: team.id,
       side,
-      teamName: row.team.name,
+      teamName: team.name,
       name: row.player.name,
       jerseyNumber: parseJerseyOrNull(row.jerseyNumber),
       role: "Starter" as const,

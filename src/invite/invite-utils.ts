@@ -1,4 +1,4 @@
-import Constants from "expo-constants";
+import { API_BASE_URL } from "@/api/config";
 
 import { ApiError, messageFromBackendBody } from "@/api/errors";
 import { posthog } from "@/lib/posthog";
@@ -28,13 +28,6 @@ function messageFromError(error: unknown): string {
   }
   if (error instanceof Error) return error.message;
   return "Something went wrong.";
-}
-
-function resolveAppScheme(): string {
-  const raw = Constants.expoConfig?.scheme;
-  if (typeof raw === "string" && raw.length > 0) return raw;
-  if (Array.isArray(raw) && raw[0]) return raw[0];
-  return "sportykore";
 }
 
 function readQueryParam(url: URL, key: string): string | undefined {
@@ -74,24 +67,14 @@ export function parseInviteToken(input: string): string | null {
   return trimmed;
 }
 
-/** Turns backend `/join/{token}` paths into shareable join-league deep links. */
-export function buildInviteUrl(inviteLink: string, context?: InviteUrlContext): string {
+/** Public registration works in any browser without an installed app. */
+export function buildInviteUrl(
+  inviteLink: string,
+  _context?: InviteUrlContext,
+): string {
   const token = parseInviteToken(inviteLink);
-  if (!token) {
-    throw new Error("Invite link is missing a token.");
-  }
-
-  const scheme = resolveAppScheme();
-  const params = new URLSearchParams({ token });
-
-  if (context?.leagueName?.trim()) {
-    params.set("leagueName", context.leagueName.trim());
-  }
-  if (context?.teamName?.trim()) {
-    params.set("teamName", context.teamName.trim());
-  }
-
-  return `${scheme}://join-league?${params.toString()}`;
+  if (!token) throw new Error("Invite link is missing a token.");
+  return new URL(`/join/${encodeURIComponent(token)}`, API_BASE_URL).toString();
 }
 
 function parseJoinLeagueInviteUrl(url: string): CapturedInviteLink | null {

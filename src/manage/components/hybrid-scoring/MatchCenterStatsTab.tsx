@@ -87,7 +87,7 @@ export function MatchCenterStatsTab({
 
   const players = useMemo(() => {
     return roster.filter((row) => {
-      if (row.team.id !== activeTeamId || row.status !== "active") return false;
+      if (row.team?.id !== activeTeamId || row.status !== "active") return false;
       if (eventTab === "saves") {
         return row.position === RosterPosition.Goalkeeper;
       }
@@ -348,7 +348,7 @@ function EditCardSheet({
   const teamPlayers = useMemo(
     () =>
       roster.filter(
-        (row) => row.team.id === selectedTeamId && row.status === "active",
+        (row) => row.team?.id === selectedTeamId && row.status === "active",
       ),
     [roster, selectedTeamId],
   );
@@ -375,7 +375,7 @@ function EditCardSheet({
       showInfoToast("Cannot edit card", "This card event is missing its stat type.");
       return;
     }
-    if (!selectedRow) {
+    if (!selectedRow?.team) {
       showInfoToast("Choose player", "Select the player who received the card.");
       return;
     }

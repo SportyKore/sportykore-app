@@ -167,7 +167,7 @@ export function slotCoordinates(
 }
 
 export function rosterToPickerPlayers(roster: LeagueRosterRow[]): RosterPickerPlayer[] {
-  return roster.map((row) => ({
+  return roster.filter((row) => row.status === "active" && row.team != null).map((row) => ({
     playerId: row.player.id,
     playerName: row.player.name,
     jerseyNumber: row.jerseyNumber ? Number(row.jerseyNumber) : null,

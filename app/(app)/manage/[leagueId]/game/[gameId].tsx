@@ -377,6 +377,7 @@ export default function ManageMatchCenterPage() {
     eventKey: MatchEventKey,
     row: LeagueRosterRow,
   ) => {
+    if (!row.team) return;
     const statTypeId = resolveStatTypeId(statTypes, eventKey);
     if (!statTypeId) {
       showInfoToast("Unknown event", "Stat type not configured on server.");

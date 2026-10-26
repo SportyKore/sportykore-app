@@ -1,10 +1,10 @@
+import type { PickedImageFile } from "@/lib/picked-image";
 import type { PlayerPosition } from "@/api/entities";
 
 export type AcceptInviteResult =
   | { requiresProfile: true; token: string }
   | { requiresProfile: false; leagueId: number | null };
 
-import type { PickedImageFile } from "@/lib/picked-image";
 
 export type { PickedImageFile };
 
@@ -28,7 +28,7 @@ export type InviteUser = {
 export type GenerateInviteParams = {
   leagueId: number;
   seasonId: number;
-  teamId: number;
+  teamId: number | null;
   invitedUserId?: number;
 };
 

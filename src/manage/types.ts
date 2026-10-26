@@ -79,8 +79,8 @@ export type LeagueRosterRow = {
   position: PlayerPosition | null;
   jerseyNumber: string | null;
   isCaptain: boolean;
-  player: ApiPlayer;
-  team: ApiTeam;
+  player: ApiPlayer & { userId?: number | null };
+  team: ApiTeam | null;
 };
 
 export type CreateGamePayload = {

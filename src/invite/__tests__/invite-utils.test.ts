@@ -71,24 +71,15 @@ describe("parseInviteToken", () => {
 });
 
 describe("buildInviteUrl", () => {
-  it("builds a join-league URL from a backend invite path", () => {
-    expect(buildInviteUrl(`/join/${TOKEN}`)).toBe(
-      `sportykore://join-league?token=${TOKEN}`,
-    );
+  it("builds a browser registration URL from a backend path", () => {
+    const url = new URL(buildInviteUrl(`/join/${TOKEN}`));
+    expect(["http:", "https:"]).toContain(url.protocol);
+    expect(url.pathname).toBe(`/join/${TOKEN}`);
   });
-
-  it("includes optional league and team context as query params", () => {
-    const url = buildInviteUrl(`/join/${TOKEN}`, {
-      leagueName: "Sunday League",
-      teamName: "Mainland FC",
-    });
-
-    expect(url).toContain("sportykore://join-league?");
-    expect(url).toContain(`token=${TOKEN}`);
-    expect(url).toContain("leagueName=Sunday+League");
-    expect(url).toContain("teamName=Mainland+FC");
+  it("uses server context instead of embedding untrusted display names", () => {
+    const url = new URL(buildInviteUrl(`/join/${TOKEN}`, { leagueName: "League", teamName: "Team" }));
+    expect(url.search).toBe("");
   });
-
   it("throws when the invite path has no token", () => {
     expect(() => buildInviteUrl("/join/")).toThrow("Invite link is missing a token.");
   });
