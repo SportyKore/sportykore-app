@@ -30,6 +30,12 @@ import {
   buildDefaultGroupConfig,
   type GroupFormatFormState,
 } from "@/groups";
+import {
+  SwissFormatConfigControl,
+  buildSwissStageConfig,
+  defaultSwissFormatFormState,
+  type SwissFormatFormState,
+} from "@/swiss";
 import { useAdaptiveLayout } from "@/hooks/useAdaptiveLayout";
 import {
   KnockoutTieFormatControl,
@@ -98,6 +104,7 @@ export default function CreateScreen() {
     doubleRoundRobin: false,
     perGroup: 2,
   });
+  const [swissForm, setSwissForm] = useState<SwissFormatFormState>(defaultSwissFormatFormState());
 
   const [teams, setTeams] = useState<TeamRow[]>(() => [
     { id: "t1", name: "", logo: null },
@@ -183,6 +190,14 @@ export default function CreateScreen() {
                   doubleRoundRobin: groupForm.doubleRoundRobin,
                   perGroup: groupForm.perGroup,
                 }),
+              }
+            : undefined,
+        swiss:
+          format === "swiss"
+            ? {
+                name: "Opening Stage",
+                groupNames: swissForm.groupNames.map((g) => g.trim()).filter(Boolean),
+                config: buildSwissStageConfig(swissForm),
               }
             : undefined,
         teams: namedTeams.map((team) => ({
@@ -373,6 +388,8 @@ export default function CreateScreen() {
                   setHasThirdPlace={setHasThirdPlace}
                   groupForm={groupForm}
                   setGroupForm={setGroupForm}
+                  swissForm={swissForm}
+                  setSwissForm={setSwissForm}
                   selectedCountry={selectedCountry}
                   onSelectCountry={setSelectedCountry}
                 />
@@ -409,6 +426,7 @@ export default function CreateScreen() {
                   tieFormat={tieFormat}
                   hasThirdPlace={hasThirdPlace}
                   groupForm={groupForm}
+                  swissForm={swissForm}
                   teams={namedTeams}
                   created={created}
                 />
@@ -475,6 +493,8 @@ function StepBasics({
   setHasThirdPlace,
   groupForm,
   setGroupForm,
+  swissForm,
+  setSwissForm,
   selectedCountry,
   onSelectCountry,
 }: {
@@ -506,6 +526,8 @@ function StepBasics({
   setHasThirdPlace: (v: boolean) => void;
   groupForm: GroupFormatFormState;
   setGroupForm: (v: GroupFormatFormState) => void;
+  swissForm: SwissFormatFormState;
+  setSwissForm: (v: SwissFormatFormState) => void;
   selectedCountry: CountryOption | null;
   onSelectCountry: (country: CountryOption) => void;
 }) {
@@ -613,10 +635,16 @@ function StepBasics({
             tone={isDark ? "dark" : "light"}
           />
         </View>
-      ) : (
+      ) : format === "group" ? (
         <GroupFormatConfigControl
           value={groupForm}
           onChange={setGroupForm}
+          tone={isDark ? "dark" : "light"}
+        />
+      ) : (
+        <SwissFormatConfigControl
+          value={swissForm}
+          onChange={setSwissForm}
           tone={isDark ? "dark" : "light"}
         />
       )}
@@ -792,7 +820,9 @@ function StepTeams({
           ? "Add at least two teams. List order becomes cup seeding, so the first team is seed 1."
           : format === "group"
             ? "Add enrolled teams. You will assign them to groups from Manage after the competition is created."
-            : "Add at least two teams. You can add logos now or update them later from Manage."}
+            : format === "swiss"
+              ? "Add enrolled teams. You will split them into campuses/groups from the Swiss tab after the competition is created."
+              : "Add at least two teams. You can add logos now or update them later from Manage."}
       </Text>
 
       <View className={isTablet ? "flex-row flex-wrap gap-3" : "gap-3"}>
@@ -868,6 +898,7 @@ function StepReview({
   tieFormat,
   hasThirdPlace,
   groupForm,
+  swissForm,
   teams,
   created,
 }: {
@@ -888,6 +919,7 @@ function StepReview({
   tieFormat: TieFormatSelection;
   hasThirdPlace: boolean;
   groupForm: GroupFormatFormState;
+  swissForm: SwissFormatFormState;
   teams: TeamRow[];
   created: boolean;
 }) {
@@ -896,12 +928,7 @@ function StepReview({
     DIVISION_OPTIONS.find((d) => d.id === divisionId)?.label ?? divisionId;
 
   const durationLabel = formatDurationSummary(startDate, endDate);
-  const formatLabel =
-    format === "knockout"
-      ? competitionFormatLabel("knockout")
-      : format === "group"
-        ? competitionFormatLabel("group")
-        : competitionFormatLabel("league");
+  const formatLabel = competitionFormatLabel(format);
   const tieFormatLabel =
     tieFormat.kind === "single"
       ? "Single match"
@@ -954,6 +981,18 @@ function StepReview({
             <SummaryLine
               label="Advance per group"
               value={String(groupForm.perGroup)}
+            />
+          </>
+        ) : format === "swiss" ? (
+          <>
+            <SummaryLine
+              label="Groups"
+              value={swissForm.groupNames.filter((g) => g.trim()).join(", ") || "—"}
+            />
+            <SummaryLine label="Rounds" value={String(swissForm.rounds)} />
+            <SummaryLine
+              label="Qualification"
+              value={`Top ${swissForm.directCount} direct, ranks ${swissForm.playoffRankFrom}-${swissForm.playoffRankTo} playoff`}
             />
           </>
         ) : (

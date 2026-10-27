@@ -15,6 +15,7 @@ import { useTheme } from "@/color/use-theme";
 import { Button } from "@/components/ui/Button";
 import { AuthTextField } from "@/components/ui/auth-text-field";
 import { BottomSheetModal } from "@/components/ui/bottom-sheet-modal";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import {
   BracketView,
   KnockoutTieFormatControl,
@@ -23,6 +24,8 @@ import {
   byeCountForTeamCount,
   byeExplanation,
   completedRoundReadyForNext,
+  latestIncompleteRound,
+  roundLabel,
   useCreateKnockoutStage,
   useGenerateNextRound,
   useSeedKnockoutStage,
@@ -101,7 +104,6 @@ export function ManageKnockoutTab({
               }
               setCreateOpen(true);
             }}
-            disabled={hasKnockoutStage}
             accessibilityRole="button"
             accessibilityLabel="Add cup"
             className={`h-10 flex-row items-center gap-1.5 rounded-full px-3 active:opacity-90 ${
@@ -227,6 +229,10 @@ function KnockoutStagePanel({
   const ties = bracketQuery.data?.ties ?? [];
   const readyRound = completedRoundReadyForNext(ties);
   const needsSeed = stage.status === "upcoming" && ties.length === 0;
+  const blockingRound =
+    !needsSeed && !readyRound && stage.status !== "completed"
+      ? latestIncompleteRound(ties)
+      : null;
 
   const handleNextRound = () => {
     if (!readyRound) return;
@@ -261,13 +267,21 @@ function KnockoutStagePanel({
     >
       <View className="flex-row flex-wrap gap-2">
         {needsSeed ? (
-          <KnockoutActionButton
-            icon="git-branch-outline"
-            label="Seed bracket"
-            tone="gold"
-            onPress={onOpenSeed}
-            disabled={teams.length < 2}
-          />
+          <>
+            <KnockoutActionButton
+              icon="git-branch-outline"
+              label="Seed bracket"
+              tone="gold"
+              onPress={onOpenSeed}
+              disabled={teams.length < 2}
+            />
+            {teams.length < 2 ? (
+              <InfoTooltip
+                title="Not enough teams"
+                message="Add at least 2 teams to this league from the Teams tab before the bracket can be seeded."
+              />
+            ) : null}
+          </>
         ) : null}
         {readyRound && readyRound !== "final" ? (
           <KnockoutActionButton
@@ -280,13 +294,20 @@ function KnockoutStagePanel({
             loading={nextRoundMutation.isPending}
           />
         ) : null}
-        {readyRound === "final" ? (
+        {readyRound === "final" && stage.status !== "completed" ? (
           <KnockoutActionButton
             icon="checkmark-done-outline"
             label="Mark stage complete"
             tone="gold"
             onPress={handleNextRound}
             loading={nextRoundMutation.isPending}
+          />
+        ) : null}
+        {blockingRound ? (
+          <InfoTooltip
+            title="Next round not ready"
+            message={`All ${roundLabel(blockingRound)} games must be completed before the next round can be generated.`}
+            label={`${roundLabel(blockingRound)} not finished`}
           />
         ) : null}
       </View>

@@ -12,6 +12,7 @@ import { useAppearance } from "@/color/appearance-context";
 import { useTheme } from "@/color/use-theme";
 import { Button } from "@/components/ui/Button";
 import { BottomSheetModal } from "@/components/ui/bottom-sheet-modal";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import {
   estimatedGamesPerGroup,
   groupStages,
@@ -300,13 +301,24 @@ export function ManageGroupsTab({
         <Text className="text-base" style={{ color: theme.text }}>
           2. Fixtures
         </Text>
-        <Button
-          variant="accent"
-          label={hasFixtures ? "Fixtures already generated" : "Generate fixtures"}
-          disabled={!drawDone || hasFixtures}
-          loading={fixturesMutation.isPending}
-          onPress={handleGenerateFixtures}
-        />
+        <View className="flex-row items-center gap-2">
+          <View className="flex-1">
+            <Button
+              variant="accent"
+              label={hasFixtures ? "Fixtures already generated" : "Generate fixtures"}
+              disabled={!drawDone || hasFixtures}
+              loading={fixturesMutation.isPending}
+              onPress={handleGenerateFixtures}
+            />
+          </View>
+          {!drawDone ? (
+            <InfoTooltip
+              size={22}
+              title="Draw not done"
+              message="Complete the draw above before fixtures can be generated."
+            />
+          ) : null}
+        </View>
       </View>
 
       <View
@@ -319,12 +331,23 @@ export function ManageGroupsTab({
         <Text className="text-sm" style={{ color: theme.textSubtle }}>
           Preview qualifiers without writing until you confirm.
         </Text>
-        <Button
-          variant="authPurple"
-          label="Generate knockout…"
-          disabled={!drawDone}
-          onPress={() => setWizardOpen(true)}
-        />
+        <View className="flex-row items-center gap-2">
+          <View className="flex-1">
+            <Button
+              variant="authPurple"
+              label="Generate knockout…"
+              disabled={!drawDone}
+              onPress={() => setWizardOpen(true)}
+            />
+          </View>
+          {!drawDone ? (
+            <InfoTooltip
+              size={22}
+              title="Draw not done"
+              message="Complete the draw above before the knockout can be generated."
+            />
+          ) : null}
+        </View>
       </View>
 
       <BottomSheetModal

@@ -34,6 +34,12 @@ const FORMAT_OPTIONS: {
     description:
       "Best when teams play in smaller groups before qualifiers advance.",
   },
+  {
+    id: "swiss",
+    label: COMPETITION_FORMAT_COPY.swiss.label,
+    description:
+      "Best for a limited number of rounds where pairings should track current form, like a multi-campus opening stage.",
+  },
 ];
 
 function formatLabel(format: CompetitionFormat): string {

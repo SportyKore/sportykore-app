@@ -23,7 +23,7 @@ export function LeagueOverviewTab({ season }: Props) {
   const recentResults = useMemo(
     () =>
       season.games
-        .filter((g) => g.status === "full_time")
+        .filter((g) => g.status === "full_time" || g.status === "completed")
         .sort(
           (a, b) =>
             new Date(b.playedAt).valueOf() - new Date(a.playedAt).valueOf(),
@@ -41,8 +41,6 @@ export function LeagueOverviewTab({ season }: Props) {
           </Text>
         </View>
       ) : null}
-
-      <SeasonFormatBanner stages={season.stages ?? []} />
 
       <View className="flex-row gap-3">
         <StatCard label="Teams" value={counts.teams} />
@@ -64,24 +62,15 @@ export function LeagueOverviewTab({ season }: Props) {
             className="h-16 w-16 items-center justify-center rounded-full"
             style={{ backgroundColor: theme.brand }}
           >
-            <Text
-              className="text-xl"
-              style={{ color: theme.textInverse }}
-            >
+            <Text className="text-xl" style={{ color: theme.textInverse }}>
               {initials(topScorer.player.name)}
             </Text>
           </View>
           <View className="flex-1">
-            <Text
-              className="text-[20px]"
-              style={{ color: theme.text }}
-            >
+            <Text className="text-[20px]" style={{ color: theme.text }}>
               {topScorer.player.name}
             </Text>
-            <Text
-              className="pt-2 text-sm"
-              style={{ color: theme.accent }}
-            >
+            <Text className="pt-2 text-sm" style={{ color: theme.accent }}>
               {topScorer.goals} goals · {topScorer.assists} assists
             </Text>
           </View>
@@ -98,18 +87,16 @@ export function LeagueOverviewTab({ season }: Props) {
             key={game.id}
             onPress={() => router.push(`/match/${game.id}`)}
             className="rounded-[22px] border px-4 py-4 active:opacity-85"
-            style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
+            style={{
+              backgroundColor: theme.card,
+              borderColor: theme.cardBorder,
+            }}
           >
-            <Text
-              style={{ color: theme.text }}
-            >
+            <Text style={{ color: theme.text }}>
               {game.homeTeam?.name ?? "TBD"} {game.homeScore ?? "-"} -{" "}
               {game.awayScore ?? "-"} {game.awayTeam?.name ?? "TBD"}
             </Text>
-            <Text
-              className="pt-2 text-sm"
-              style={{ color: theme.textSubtle }}
-            >
+            <Text className="pt-2 text-sm" style={{ color: theme.textSubtle }}>
               {formatPlayedAt(game.playedAt)}
             </Text>
           </Pressable>
@@ -128,6 +115,7 @@ export function LeagueOverviewTab({ season }: Props) {
           <View className="min-w-0 flex-1">{topScorerContent}</View>
           <View className="min-w-0 flex-1">{recentResultsContent}</View>
         </View>
+        <SeasonFormatBanner stages={season.stages ?? []} />
       </View>
     );
   }
@@ -137,6 +125,7 @@ export function LeagueOverviewTab({ season }: Props) {
       {introContent}
       {topScorerContent}
       {recentResultsContent}
+      <SeasonFormatBanner stages={season.stages ?? []} />
     </View>
   );
 }
@@ -165,9 +154,11 @@ function deriveTopScorer(season: ApiSeasonDetail) {
   for (const stat of season.stats) {
     if (!stat.player) continue;
     const key = stat.player.id;
-    const entry =
-      totals.get(key) ??
-      { player: stat.player, goals: 0, assists: 0 };
+    const entry = totals.get(key) ?? {
+      player: stat.player,
+      goals: 0,
+      assists: 0,
+    };
     if (isGoalsStat(stat)) entry.goals += stat.numericValue ?? 1;
     const display = stat.type?.displayName?.toLowerCase() ?? "";
     if (display.includes("assist")) entry.assists += stat.numericValue ?? 1;
@@ -196,10 +187,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
       className="flex-1 rounded-[22px] border px-3 py-4"
       style={{ backgroundColor: theme.card, borderColor: theme.cardBorder }}
     >
-      <Text
-        style={{ color: theme.accent }}
-        className="text-center text-[24px]"
-      >
+      <Text style={{ color: theme.accent }} className="text-center text-[24px]">
         {value}
       </Text>
       <Text
@@ -238,10 +226,7 @@ function EmptyText({ children }: { children: string }) {
   const theme = useTheme();
 
   return (
-    <Text
-      className="text-sm"
-      style={{ color: theme.textSubtle }}
-    >
+    <Text className="text-sm" style={{ color: theme.textSubtle }}>
       {children}
     </Text>
   );

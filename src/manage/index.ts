@@ -50,6 +50,7 @@ export {
   ManageVenuesTab,
   ManageKnockoutTab,
   ManageGroupsTab,
+  ManageSwissTab,
   ManageStandingsTab,
   ManageActivityTab,
   TeamFormSheet,

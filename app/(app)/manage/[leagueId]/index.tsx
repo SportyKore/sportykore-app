@@ -24,15 +24,18 @@ import {
   ManagePlayersTab,
   ManageSettingsTab,
   ManageStandingsTab,
+  ManageSwissTab,
   ManageTeamsTab,
   ManageVenuesTab,
   useLeagueTeams,
   useManageLeagueDetail,
 } from "@/manage";
+import { hasSwissStage } from "@/swiss";
 
 type TabKey =
   | "games"
   | "groups"
+  | "swiss"
   | "standings"
   | "knockout"
   | "teams"
@@ -72,16 +75,24 @@ export default function ManageLeagueRoute() {
 
   const stages = query.data?.season.stages ?? [];
   const hasRr = hasRoundRobinStage(stages);
-  const hasGroup = hasGroupStage(stages);
-  const hasStandings = standingStages(stages).length > 0;
+  const hasSwiss = hasSwissStage(stages);
+  // A swiss season manages everything (draw, rounds, standings, qualification)
+  // from its own tab, so the generic Groups/Standings tabs would just be
+  // redundant and confusing alongside it.
+  const hasGroup = hasGroupStage(stages) && !hasSwiss;
+  const hasStandings = !hasSwiss && standingStages(stages).length > 0;
   const knockouts = knockoutStages(stages);
   const showKnockout = knockouts.length > 0;
   const canScheduleRoundRobin = hasRr || stages.length === 0;
+  // A swiss stage can be added to a brand-new, stage-less season; once any
+  // other stage exists first, adding swiss alongside it isn't supported here.
+  const showSwissTab = hasSwiss || stages.length === 0;
 
   const tabs: readonly DetailTab<TabKey>[] = useMemo(
     () => [
       { key: "games", label: "Games" },
       ...(hasGroup ? ([{ key: "groups", label: "Groups" }] as const) : []),
+      ...(showSwissTab ? ([{ key: "swiss", label: "Swiss" }] as const) : []),
       ...(hasStandings
         ? ([{ key: "standings", label: "Standings" }] as const)
         : []),
@@ -94,7 +105,7 @@ export default function ManageLeagueRoute() {
       { key: "settings", label: "Settings" },
       { key: "activity", label: "Activity" },
     ],
-    [hasGroup, hasStandings, showKnockout],
+    [hasGroup, showSwissTab, hasStandings, showKnockout],
   );
 
   useEffect(() => {
@@ -177,6 +188,16 @@ export default function ManageLeagueRoute() {
       ) : null}
       {activeTab === "groups" && hasGroup ? (
         <ManageGroupsTab
+          leagueId={leagueId}
+          seasonId={activeSeasonId}
+          stages={stages}
+          teams={teamsQuery.data ?? []}
+          games={season.games ?? []}
+          onKnockoutGenerated={() => setActiveTab("knockout")}
+        />
+      ) : null}
+      {activeTab === "swiss" && showSwissTab ? (
+        <ManageSwissTab
           leagueId={leagueId}
           seasonId={activeSeasonId}
           stages={stages}

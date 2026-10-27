@@ -18,6 +18,7 @@ export type {
 } from "./entity-logo";
 export { FormFieldLabel } from "./form-field-label";
 export { GamePhaseLabel } from "./game-phase-label";
+export { InfoTooltip } from "./info-tooltip";
 export { LiveMinute } from "./live-minute";
 export { LogoImageUpload } from "./logo-image-upload";
 export { ImagePreviewProvider, useImagePreview } from "./image-preview";

@@ -318,7 +318,7 @@ export type PausedFromStatus =
   | "penalty_shootout"
   | "live";
 
-export type StageType = "round_robin" | "group" | "knockout" | "playoff";
+export type StageType = "round_robin" | "group" | "knockout" | "playoff" | "swiss";
 export type StageStatus = "upcoming" | "active" | "completed";
 export type TieFormat = "single" | "two_legged" | "best_of";
 export type TieStatus = "pending" | "in_progress" | "completed";
@@ -333,7 +333,7 @@ export type BracketRound =
   | "final"
   | "third_place";
 
-export type CompetitionFormat = "league" | "knockout" | "group";
+export type CompetitionFormat = "league" | "knockout" | "group" | "swiss";
 
 export type KnockoutTieConfig = {
   tie_format: TieFormat;
@@ -362,6 +362,30 @@ export type GroupStageConfig = {
   };
 };
 
+export type SwissByeHandling = "warn" | "award_points" | "exclude";
+export type SwissPlayoffPairing = "rank_cross" | "seeded";
+
+export type SwissQualificationRule = {
+  directCount: number;
+  playoffRankFrom: number;
+  playoffRankTo: number;
+  playoffPairing?: SwissPlayoffPairing;
+};
+
+export type SwissStageConfig = {
+  format: {
+    rounds: number;
+    byeHandling: SwissByeHandling;
+    seed?: number;
+  };
+  qualification: SwissQualificationRule;
+  /** Per-group override, keyed by stageGroupId (as a string key). */
+  qualificationByGroup?: Record<string, SwissQualificationRule>;
+  constraints?: {
+    noPair?: { teamIds: number[] }[];
+  };
+};
+
 export type ApiStage = {
   id: number;
   seasonId: number;
@@ -370,8 +394,54 @@ export type ApiStage = {
   sequence: number;
   status: StageStatus;
   sourceStageId?: number | null;
-  config: KnockoutStageConfig | GroupStageConfig | Record<string, unknown>;
+  config:
+    | KnockoutStageConfig
+    | GroupStageConfig
+    | SwissStageConfig
+    | Record<string, unknown>;
   groups?: ApiStageGroup[];
+};
+
+export type SwissProposedFixture = { homeTeamId: number; awayTeamId: number };
+
+export type SwissPairingConflict =
+  | { type: "rematch"; teamIds: [number, number] }
+  | { type: "no_pair_violation"; teamIds: [number, number] }
+  | { type: "unresolved_team"; teamIds: number[] };
+
+export type ApiSwissProposeResult = {
+  fixtures: SwissProposedFixture[];
+  conflicts: SwissPairingConflict[];
+  unresolvedTeamIds: number[];
+  byeTeamId: number | null;
+};
+
+export type ApiSwissQualificationResult = {
+  stageGroupId: number;
+  stageGroupName: string;
+  direct: ApiStanding[];
+  playoffCandidates: ApiStanding[];
+  eliminated: ApiStanding[];
+  rule: SwissQualificationRule;
+};
+
+export type ApiSwissPlayoffProposal = {
+  fixtures: SwissProposedFixture[];
+  byeTeamId: number | null;
+};
+
+export type ApiSwissKnockoutPreviewGroup = {
+  stageGroupId: number;
+  stageGroupName: string;
+  ready: boolean;
+  reason?: string;
+  qualifierTeamIds: number[];
+};
+
+export type ApiSwissKnockoutPreview = {
+  groups: ApiSwissKnockoutPreviewGroup[];
+  ready: boolean;
+  qualifierTeamIds: number[];
 };
 
 export type ApiTie = {
@@ -413,6 +483,7 @@ export type ApiGame = {
   pausedFromStatus?: PausedFromStatus | null;
   stageId?: number | null;
   stageGroupId?: number | null;
+  roundNumber?: number | null;
   tieId?: number | null;
   leg?: number | null;
   round?: BracketRound | null;

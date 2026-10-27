@@ -69,7 +69,7 @@ export function LeagueStageStandingsPanel({
     );
   }
 
-  if (stage.stageType === "group") {
+  if (stage.stageType === "group" || stage.stageType === "swiss") {
     return (
       <GroupStandingsView
         tables={query.data.tables}

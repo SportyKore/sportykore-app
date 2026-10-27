@@ -13,6 +13,7 @@ export { ManageTeamsTab } from "./tabs/ManageTeamsTab";
 export { ManageVenuesTab } from "./tabs/ManageVenuesTab";
 export { ManageKnockoutTab } from "./tabs/ManageKnockoutTab";
 export { ManageGroupsTab } from "./tabs/ManageGroupsTab";
+export { ManageSwissTab } from "./tabs/ManageSwissTab";
 export { ManageStandingsTab } from "./tabs/ManageStandingsTab";
 export { ManageActivityTab } from "./tabs/ManageActivityTab";
 export { EditSeasonSheet } from "./seasons/EditSeasonSheet";

@@ -4,6 +4,7 @@ import type {
   CompetitionFormat,
   GroupStageConfig,
   KnockoutStageConfig,
+  SwissStageConfig,
 } from "@/api/entities";
 
 import type { TiebreakerRule } from "./tiebreaker-options";
@@ -43,6 +44,12 @@ export type CreateLeagueGroupPayload = {
   config?: GroupStageConfig;
 };
 
+export type CreateLeagueSwissPayload = {
+  name?: string;
+  groupNames: string[];
+  config: SwissStageConfig;
+};
+
 export type CreateLeaguePayload = {
   name: string;
   seasonName: string;
@@ -56,6 +63,7 @@ export type CreateLeaguePayload = {
   format?: CompetitionFormat;
   knockout?: CreateLeagueKnockoutPayload;
   group?: CreateLeagueGroupPayload;
+  swiss?: CreateLeagueSwissPayload;
   teams?: CreateLeagueTeamPayload[];
 };
 
@@ -87,7 +95,8 @@ function readCreateLeagueResult(body: unknown): CreateLeagueResult {
     format:
       record.format === "league" ||
       record.format === "knockout" ||
-      record.format === "group"
+      record.format === "group" ||
+      record.format === "swiss"
         ? record.format
         : undefined,
     seeded: typeof record.seeded === "boolean" ? record.seeded : undefined,
@@ -136,6 +145,9 @@ function buildCreateLeagueFormData(payload: CreateLeaguePayload): FormData {
   }
   if (payload.group) {
     form.append("group", JSON.stringify(payload.group));
+  }
+  if (payload.swiss) {
+    form.append("swiss", JSON.stringify(payload.swiss));
   }
   if (payload.logo) {
     appendImageFile(form, "logo", payload.logo);

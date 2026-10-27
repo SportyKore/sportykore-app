@@ -14,7 +14,12 @@ export function standingStages(
   stages: ApiStage[] | undefined | null,
 ): ApiStage[] {
   return (stages ?? [])
-    .filter((s) => s.stageType === "round_robin" || s.stageType === "group")
+    .filter(
+      (s) =>
+        s.stageType === "round_robin" ||
+        s.stageType === "group" ||
+        s.stageType === "swiss",
+    )
     .sort((a, b) => a.sequence - b.sequence);
 }
 

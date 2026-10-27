@@ -20,7 +20,13 @@ import {
   knockoutStages,
   pickPrimaryStage,
 } from "@/knockout";
-import { useLeagueDetail } from "@/league";
+import {
+  useLeagueDetail,
+  matchStages,
+  matchStageChoices,
+  filterStageMatches,
+} from "@/league";
+import { hasSwissStage } from "@/swiss";
 import { LeagueBracketTab } from "@/league/components/tabs/BracketTab";
 import { LeagueMatchesTab } from "@/league/components/tabs/MatchesTab";
 import { LeagueOverviewTab } from "@/league/components/tabs/OverviewTab";
@@ -56,12 +62,17 @@ export default function LeagueRoute() {
       : undefined,
   );
 
-  const stages = query.data?.season.stages ?? [];
+  const stages = Array.from(
+    new Map(
+      (query.data?.season.stages ?? []).map((stage) => [stage.id, stage]),
+    ).values(),
+  );
   const primary = pickPrimaryStage(stages);
   const knockouts = knockoutStages(stages);
   const hasRr = hasRoundRobinStage(stages);
   const hasGroup = hasGroupStage(stages);
-  const hasTableStage = hasRr || hasGroup;
+  const hasSwiss = hasSwissStage(stages);
+  const hasTableStage = hasRr || hasGroup || hasSwiss;
 
   useEffect(() => {
     if (primary && activeStageId == null) {
@@ -72,18 +83,29 @@ export default function LeagueRoute() {
   const selectedStage: ApiStage | null =
     stages.find((s) => s.id === activeStageId) ?? primary;
 
-  const standingStage: ApiStage | null =
-    selectedStage?.stageType === "round_robin" ||
-    selectedStage?.stageType === "group"
-      ? selectedStage
-      : stages.find((s) => s.stageType === "group") ??
-        stages.find((s) => s.stageType === "round_robin") ??
-        null;
+  const relevantStages = matchStages(stages);
+  const matchingStage =
+    relevantStages.find((stage) => stage.id === activeStageId) ??
+    relevantStages[0];
+  const standingStage =
+    matchingStage?.stageType !== "knockout" ? matchingStage : null;
+  const stageChoices =
+    activeTab === "bracket"
+      ? knockouts
+      : activeTab === "matches"
+        ? matchStageChoices(stages)
+        : activeTab === "standings"
+          ? relevantStages.filter((stage) => stage.stageType !== "knockout")
+          : [];
+  const bracketStage =
+    selectedStage?.stageType === "knockout" ? selectedStage : knockouts[0];
 
   const tabs: readonly DetailTab<TabKey>[] = useMemo(() => {
-    const list: DetailTab<TabKey>[] = [{ key: "overview", label: "Overview" }];
+    const list: DetailTab<TabKey>[] = [
+      { key: "overview", label: "Overview" },
+      { key: "matches", label: "Matches" },
+    ];
     if (hasTableStage) {
-      list.push({ key: "matches", label: "Matches" });
       list.push({ key: "standings", label: "Standings" });
     }
     if (knockouts.length > 0) {
@@ -138,15 +160,11 @@ export default function LeagueRoute() {
     status: entry.status,
   }));
 
-  const matchesForTab =
-    selectedStage?.stageType === "group"
-      ? (season.games ?? []).filter(
-          (g) =>
-            g.stageId === selectedStage.id ||
-            (g.stageGroupId != null &&
-              (selectedStage.groups ?? []).some((gr) => gr.id === g.stageGroupId)),
-        )
-      : season.games;
+  const matchesForTab = filterStageMatches(
+    season.games ?? [],
+    stages,
+    activeStageId,
+  );
 
   return (
     <DetailScreenShell
@@ -168,38 +186,42 @@ export default function LeagueRoute() {
           <SeasonPicker
             seasons={seasonOptions}
             activeSeasonId={seasonId ?? season.id}
-            onSelect={setSeasonId}
+            onSelect={(id) => {
+              setSeasonId(id);
+              setActiveStageId(null);
+            }}
           />
-          {stages.length > 1 ? (
+          {stageChoices.length > 1 ? (
             <View className="mb-2 flex-row flex-wrap gap-2">
-              {stages
+              {stageChoices
                 .slice()
                 .sort((a, b) => a.sequence - b.sequence)
                 .map((stage) => {
-                  const active = stage.id === selectedStage?.id;
+                  const active =
+                    stage.id ===
+                    (activeTab === "bracket"
+                      ? bracketStage?.id
+                      : matchingStage?.id);
                   return (
                     <Pressable
                       key={stage.id}
-                      onPress={() => {
-                        setActiveStageId(stage.id);
-                        if (stage.stageType === "knockout") {
-                          setActiveTab("bracket");
-                        } else if (
-                          stage.stageType === "round_robin" ||
-                          stage.stageType === "group"
-                        ) {
-                          setActiveTab("standings");
-                        }
-                      }}
+                      onPress={() => setActiveStageId(stage.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Filter by ${stage.name}`}
+                      accessibilityState={{ selected: active }}
                       className="rounded-full border px-3 py-1.5"
                       style={{
-                        backgroundColor: active ? theme.accentMuted : theme.card,
+                        backgroundColor: active
+                          ? theme.accentMuted
+                          : theme.card,
                         borderColor: active ? theme.accent : theme.cardBorder,
                       }}
                     >
                       <Text
                         className="text-xs"
-                        style={{ color: active ? theme.accent : theme.textMuted }}
+                        style={{
+                          color: active ? theme.accent : theme.textMuted,
+                        }}
                       >
                         {stage.name}
                       </Text>
@@ -227,13 +249,8 @@ export default function LeagueRoute() {
           fallbackStandings={season.standings}
         />
       ) : null}
-      {activeTab === "bracket" && selectedStage?.stageType === "knockout" ? (
-        <LeagueBracketTab stage={selectedStage} />
-      ) : null}
-      {activeTab === "bracket" &&
-      selectedStage?.stageType !== "knockout" &&
-      knockouts[0] ? (
-        <LeagueBracketTab stage={knockouts[0]} />
+      {activeTab === "bracket" && bracketStage ? (
+        <LeagueBracketTab stage={bracketStage} />
       ) : null}
       {activeTab === "stats" ? (
         <LeagueStatsTab statTypes={statTypes} stats={season.stats} />

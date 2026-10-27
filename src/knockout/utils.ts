@@ -93,6 +93,7 @@ export function pickPrimaryStage(
   if (active[0]) return active[0];
   return (
     ordered.find((s) => s.stageType === "knockout") ??
+    ordered.find((s) => s.stageType === "swiss") ??
     ordered.find((s) => s.stageType === "group") ??
     ordered.find((s) => s.stageType === "round_robin") ??
     ordered[0] ??
