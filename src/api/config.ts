@@ -5,3 +5,7 @@
 export const API_BASE_URL = "https://backend.sportykore.com"
 // export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://backend.sportykore.com"
 
+/** Browser origin for join/claim share links. Not the API host. */
+export const PUBLIC_WEB_URL =
+  process.env.EXPO_PUBLIC_WEB_URL || "https://join.sportykore.com"
+

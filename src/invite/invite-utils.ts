@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "@/api/config";
+import { PUBLIC_WEB_URL } from "@/api/config";
 
 import { ApiError, messageFromBackendBody } from "@/api/errors";
 import { posthog } from "@/lib/posthog";
@@ -74,7 +74,7 @@ export function buildInviteUrl(
 ): string {
   const token = parseInviteToken(inviteLink);
   if (!token) throw new Error("Invite link is missing a token.");
-  return new URL(`/join/${encodeURIComponent(token)}`, API_BASE_URL).toString();
+  return new URL(`/join/${encodeURIComponent(token)}`, PUBLIC_WEB_URL).toString();
 }
 
 function parseJoinLeagueInviteUrl(url: string): CapturedInviteLink | null {

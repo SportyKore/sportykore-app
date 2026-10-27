@@ -71,9 +71,24 @@ describe("parseInviteToken", () => {
 });
 
 describe("buildInviteUrl", () => {
-  it("builds a browser registration URL from a backend path", () => {
+  it("builds a browser registration URL on the public join host", () => {
     const url = new URL(buildInviteUrl(`/join/${TOKEN}`));
-    expect(["http:", "https:"]).toContain(url.protocol);
+    expect(url.protocol).toBe("https:");
+    expect(url.hostname).toBe("join.sportykore.com");
+    expect(url.pathname).toBe(`/join/${TOKEN}`);
+  });
+  it("rewrites an API-host join URL onto the public join host", () => {
+    const url = new URL(
+      buildInviteUrl(`https://backend.sportykore.com/join/${TOKEN}`),
+    );
+    expect(url.origin).toBe("https://join.sportykore.com");
+    expect(url.pathname).toBe(`/join/${TOKEN}`);
+  });
+  it("keeps a public join URL on the public host", () => {
+    const url = new URL(
+      buildInviteUrl(`https://join.sportykore.com/join/${TOKEN}`),
+    );
+    expect(url.origin).toBe("https://join.sportykore.com");
     expect(url.pathname).toBe(`/join/${TOKEN}`);
   });
   it("uses server context instead of embedding untrusted display names", () => {
